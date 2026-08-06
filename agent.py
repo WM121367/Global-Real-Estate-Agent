@@ -10,18 +10,17 @@ import hashlib
 import json
 import os
 from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
 from uagents import Agent, Context, Model, Protocol
-from pydantic import BaseModel, Field
-from uagents import Agent, Context, Model, Protocol
+
 # ------------------------------------------------------------------------------
 # 1. データモデル定義 (Data Models)
 # ------------------------------------------------------------------------------
 
+
 class RealEstateRequest(Model):
     request_id: str
     timestamp: str
-    force_refresh: bool = False  # Default値はイコールで指定
+    force_refresh: bool = False
 
 
 class RWATokenMetrics(Model):
@@ -65,11 +64,11 @@ class RealEstateResponse(Model):
     capital_flight_risk: list[CapitalFlightAndRisk]
     data_hash: str
 
+
 # ------------------------------------------------------------------------------
 # 2. Agent 初期設定 & Protocol 定義
 # ------------------------------------------------------------------------------
 
-# Secretタブ（環境変数）から安全に読み込む
 SEED_PHRASE = os.getenv("AGENT_SEED")
 
 if not SEED_PHRASE:
@@ -85,7 +84,7 @@ real_estate_agent = Agent(
     seed=SEED_PHRASE,
     port=AGENT_PORT,
     endpoint=AGENT_ENDPOINT,
-    publish_manifest=True,  # Almanac 登録およびサービス発見を有効化
+    publish_manifest=True,
 )
 
 real_estate_proto = Protocol("RealEstateRWAProtocol", version="1.0.0")
@@ -199,9 +198,7 @@ def compute_payload_hash(rwa, cap, macro, flight) -> str:
 
     def to_dict(obj):
         return (
-            obj.model_dump()
-            if hasattr(obj, "model_dump")
-            else obj.dict()
+            obj.model_dump() if hasattr(obj, "model_dump") else obj.dict()
         )
 
     raw_str = json.dumps(
@@ -215,11 +212,15 @@ def compute_payload_hash(rwa, cap, macro, flight) -> str:
     )
     return hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
 
+
 # ------------------------------------------------------------------------------
 # 4. メッセージハンドラ & 重複チェックロジック (uAgents Event Handlers)
 # ------------------------------------------------------------------------------
 
-@real_estate_proto.on_message(model=RealEstateRequest, replies=RealEstateResponse)
+
+@real_estate_proto.on_message(
+    model=RealEstateRequest, replies=RealEstateResponse
+)
 async def handle_real_estate_request(
     ctx: Context, sender: str, msg: RealEstateRequest
 ):
@@ -234,7 +235,7 @@ async def handle_real_estate_request(
 
     if not msg.force_refresh and last_sent_hash == current_hash:
         ctx.logger.info(
-            f"[{ctx.name}] Data unchanged (Hash: {current_hash[:8]}...). Skipping payload duplication."
+            f"[real_estate_agent] Data unchanged (Hash: {current_hash[:8]}...). Skipping payload duplication."
         )
 
     # ハッシュおよびタイムスタンプの更新
@@ -254,8 +255,9 @@ async def handle_real_estate_request(
 
     await ctx.send(sender, response)
     ctx.logger.info(
-        f"[{ctx.name}] Successfully sent RealEstateResponse to {sender}"
+        f"[real_estate_agent] Successfully sent RealEstateResponse to {sender}"
     )
+
 
 # Agent にプロトコルを適用
 real_estate_agent.include(real_estate_proto)
@@ -264,5 +266,7 @@ real_estate_agent.include(real_estate_proto)
 # 5. エージェントの起動
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
-    print(f"Starting Real Estate Agent on address: {real_estate_agent.address}")
+    print(
+        f"Starting Real Estate Agent on address: {real_estate_agent.address}"
+    )
     real_estate_agent.run()
