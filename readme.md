@@ -1,3 +1,4 @@
+```
 🏢 Global Real Estate & RWA Intelligence Agent (v1.0.0)
 On-Chain Real Estate RWA Tokens (Propy, RealT, Centrifuge), Global Cap Rates, Macro Interest Correlation & Capital Flight Intelligence Engine with uAgents Storage Sync.
 
@@ -43,6 +44,7 @@ This agent functions as the dedicated "Hard Property Asset Intelligence Layer." 
 
 🛠️ Data Query Example
 Request
+```
 {
   "request_id": "req_wmm_re_1718900000",
   "timestamp": "2026-08-06T12:00:00Z",
