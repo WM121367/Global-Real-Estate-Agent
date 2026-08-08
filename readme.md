@@ -1,4 +1,4 @@
-🏢 Global Real Estate & RWA Intelligence Agent (v1.0.0)
+🏢 Global Real Estate & RWA Intelligence Agent (v1.0.0-cloud)
 On-Chain Real Estate RWA Tokens (Propy, RealT, Centrifuge), Global Cap Rates, Macro Interest Correlation & Capital Flight Intelligence Engine with uAgents Storage Sync.
 
 Global Real Estate & RWA Intelligence Agent is an autonomous AI agent that analyzes on-chain Real World Asset (RWA) tokenization protocols, global municipal real estate capitalization rates (Cap Rates), macroeconomic interest rate volatility (US10Y & 30Y Mortgage Spreads), and cross-border capital flight dynamics into hard property assets. It operates in direct sequence with the 13-Chain, AI & DePIN, Metal, and Global Stock surveillance layers within the World Money Map ecosystem.
