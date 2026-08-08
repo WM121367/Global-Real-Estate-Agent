@@ -1,5 +1,5 @@
 # real_estate_agent.py
-"""World Money Map (Ver 4.1.0) - Real Estate & RWA Analysis Agent
+"""World Money Map (Ver 4.5.0) - Real Estate & RWA Analysis Agent
 
 uAgents Framework を使用し、オーケストレーターおよび他 Agent と相互通信を行う
 第5の子エージェント実装。
@@ -79,12 +79,16 @@ if not SEED_PHRASE:
 AGENT_PORT = 8005
 AGENT_ENDPOINT = [f"http://127.0.0.1:{AGENT_PORT}/submit"]
 
+import os
+
+# ターミナルで export された AGENT_SEED を取得
+AGENT_SEED = os.getenv("AGENT_SEED")
+
 real_estate_agent = Agent(
     name="real_estate_agent",
-    seed=SEED_PHRASE,
-    port=AGENT_PORT,
-    endpoint=AGENT_ENDPOINT,
-    publish_manifest=True,
+    seed=AGENT_SEED,
+    port=8005,
+    endpoint=["http://127.0.0.1:8005/submit"],
 )
 
 real_estate_proto = Protocol("RealEstateRWAProtocol", version="1.0.0")
@@ -266,6 +270,22 @@ real_estate_agent.include(real_estate_proto)
 # 5. エージェントの起動
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
+    import os
+    from uagents_core.utils.registration import (
+        register_chat_agent,
+        RegistrationRequestCredentials,
+    )
+
+    # Agentverseへの個別登録（Stock Agent用の名前を指定）
+    register_chat_agent(
+        "subagent_realestate_local",  # 👈 各子エージェントに応じた固有の名前に変更
+        "https://agentverse.ai",
+        active=True,
+        credentials=RegistrationRequestCredentials(
+            agentverse_api_key=os.environ["AGENTVERSE_KEY"],
+            agent_seed_phrase=os.environ["AGENT_SEED_PHRASE"],
+        ),
+    )
     print(
         f"Starting Real Estate Agent on address: {real_estate_agent.address}"
     )
