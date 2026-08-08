@@ -1,10 +1,6 @@
-# real_estate_agent.py
-"""World Money Map (Ver 4.5.0) - Real Estate & RWA Analysis Agent
-
-uAgents Framework を使用し、オーケストレーターおよび他 Agent と相互通信を行う
-第5の子エージェント実装。
-"""
-
+# ==================================================
+# 🏢 Global Estate Intelligence Agent (Ver 1.1.0-could)
+# ==================================================
 import datetime
 import hashlib
 import json
@@ -12,10 +8,20 @@ import os
 from typing import Dict, List, Optional
 from uagents import Agent, Context, Model, Protocol
 
+CURRENT_VERSION = "4.5.0-cloud"
+
+# Agentverse Secrets から AGENT_SEED を取得
+AGENT_SEED = os.getenv("AGENT_SEED")
+
+# クラウドホスティング用 Agent 初期化 (port/endpoint は Agentverse が自動制御)
+real_estate_agent = Agent(
+    name="global-estate-intell-agent",
+    seed=AGENT_SEED
+)
+
 # ------------------------------------------------------------------------------
 # 1. データモデル定義 (Data Models)
 # ------------------------------------------------------------------------------
-
 
 class RealEstateRequest(Model):
     request_id: str
@@ -65,38 +71,31 @@ class RealEstateResponse(Model):
     data_hash: str
 
 
+class ChatMessage(Model):
+    message: str
+
+
 # ------------------------------------------------------------------------------
-# 2. Agent 初期設定 & Protocol 定義
+# 2. Protocol 定義 & Chat プロトコル組み込み
 # ------------------------------------------------------------------------------
-
-SEED_PHRASE = os.getenv("AGENT_SEED")
-
-if not SEED_PHRASE:
-    raise ValueError(
-        "環境変数 AGENT_SEED が設定されていません。Secretタブを確認してください。"
-    )
-
-AGENT_PORT = 8005
-AGENT_ENDPOINT = [f"http://127.0.0.1:{AGENT_PORT}/submit"]
-
-import os
-
-# ターミナルで export された AGENT_SEED を取得
-AGENT_SEED = os.getenv("AGENT_SEED")
-
-real_estate_agent = Agent(
-    name="real_estate_agent",
-    seed=AGENT_SEED,
-    port=8005,
-    endpoint=["http://127.0.0.1:8005/submit"],
-)
 
 real_estate_proto = Protocol("RealEstateRWAProtocol", version="1.0.0")
+chat_proto = Protocol("Agent Chat Protocol", version="0.2.0")
+
+@chat_proto.on_message(model=ChatMessage, replies=ChatMessage)
+async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
+    ctx.logger.info(f"💬 チャット受信 ({sender}): {msg.message}")
+    reply_text = (
+        f"🏢 Global Estate Intelligence Agent (Ver {CURRENT_VERSION}) [@prime-estate-oracle] です！\n"
+        f"グローバル主要都市キャップレート、RWA不動産プロトコルTVL、モーゲージ金利スプレッド、およびキャピタルフライトリスクを追跡中です。"
+    )
+    await ctx.send(sender, ChatMessage(message=reply_text))
+
+real_estate_agent.include(chat_proto)
 
 # ------------------------------------------------------------------------------
 # 3. データ取得 & 分析ロジック (内部処理)
 # ------------------------------------------------------------------------------
-
 
 def fetch_real_estate_data() -> (
     tuple[
@@ -106,7 +105,7 @@ def fetch_real_estate_data() -> (
         List[CapitalFlightAndRisk],
     ]
 ):
-    """外部APIやオンチェーンノードからデータを収集・解析する実体関数（サンプルデータ生成）"""
+    """外部APIやオンチェーンノードからデータを収集・解析する実体関数"""
     rwa_tokens = [
         RWATokenMetrics(
             protocol="RealT",
@@ -218,9 +217,8 @@ def compute_payload_hash(rwa, cap, macro, flight) -> str:
 
 
 # ------------------------------------------------------------------------------
-# 4. メッセージハンドラ & 重複チェックロジック (uAgents Event Handlers)
+# 4. メッセージハンドラ (uAgents Event Handlers)
 # ------------------------------------------------------------------------------
-
 
 @real_estate_proto.on_message(
     model=RealEstateRequest, replies=RealEstateResponse
@@ -239,7 +237,7 @@ async def handle_real_estate_request(
 
     if not msg.force_refresh and last_sent_hash == current_hash:
         ctx.logger.info(
-            f"[real_estate_agent] Data unchanged (Hash: {current_hash[:8]}...). Skipping payload duplication."
+            f"[global_estate_agent] Data unchanged (Hash: {current_hash[:8]}...). Skipping payload duplication."
         )
 
     # ハッシュおよびタイムスタンプの更新
@@ -259,34 +257,22 @@ async def handle_real_estate_request(
 
     await ctx.send(sender, response)
     ctx.logger.info(
-        f"[real_estate_agent] Successfully sent RealEstateResponse to {sender}"
+        f"[global_estate_agent] Successfully sent RealEstateResponse to {sender}"
     )
 
 
 # Agent にプロトコルを適用
 real_estate_agent.include(real_estate_proto)
 
+@real_estate_agent.on_event("startup")
+async def startup_handler(ctx: Context):
+    ctx.logger.info("==================================================")
+    ctx.logger.info(f"🏢 Global Estate Intelligence Agent (Ver {CURRENT_VERSION})")
+    ctx.logger.info(f"📍 Address: {real_estate_agent.address}")
+    ctx.logger.info("==================================================")
+
 # ------------------------------------------------------------------------------
 # 5. エージェントの起動
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
-    import os
-    from uagents_core.utils.registration import (
-        register_chat_agent,
-        RegistrationRequestCredentials,
-    )
-
-    # Agentverseへの個別登録（Stock Agent用の名前を指定）
-    register_chat_agent(
-        "subagent_realestate_local",  # 👈 各子エージェントに応じた固有の名前に変更
-        "https://agentverse.ai",
-        active=True,
-        credentials=RegistrationRequestCredentials(
-            agentverse_api_key=os.environ["AGENTVERSE_KEY"],
-            agent_seed_phrase=os.environ["AGENT_SEED_PHRASE"],
-        ),
-    )
-    print(
-        f"Starting Real Estate Agent on address: {real_estate_agent.address}"
-    )
     real_estate_agent.run()
