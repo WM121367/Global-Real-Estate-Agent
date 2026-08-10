@@ -16,7 +16,6 @@ AGENT_SEED = os.getenv("AGENT_SEED")
 # クラウドホスティング用 Agent 初期化 (port/endpoint は Agentverse が自動制御)
 real_estate_agent = Agent(
     name="global-estate-intell-agent",
-    seed=AGENT_SEED
 )
 
 # ------------------------------------------------------------------------------
